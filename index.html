@@ -1,1 +1,168 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C10 | Interactive Decision Webpage</title>
+<style>
+:root{--navy:#14233b;--blue:#2457a6;--pink:#d94f86;--ink:#1d2939;--muted:#667085;--line:#d8deea;--bg:#f4f7fb;--card:#fff;--green:#16845b;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#14233b,#244b82);color:white;padding:28px max(20px,calc((100% - 1180px)/2))}
+header .eyebrow{letter-spacing:.13em;text-transform:uppercase;font-size:12px;color:#d9e6ff;font-weight:700}
+h1{margin:5px 0;font-size:clamp(25px,4vw,38px);line-height:1.15}header p{margin:8px 0 0;color:#e5edfb;max-width:780px}
+main{max-width:1180px;margin:24px auto;padding:0 18px 50px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+button,select,input{font:inherit}button{border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;font-weight:650;cursor:pointer}button:hover{filter:brightness(.94)}button.secondary{background:#e9eef7;color:#233a5e;border:1px solid #d5deec}button.danger{background:#fff0ef;color:var(--red);border:1px solid #f3c6c2}button.small{padding:5px 9px;font-size:12px}
+select,input[type=text],input[type=number]{border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;background:white;color:var(--ink);min-width:0;width:100%}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:19px;margin:16px 0;box-shadow:0 3px 12px #172b4d08}
+h2{font-size:20px;margin:0 0 12px;color:var(--navy)}h3{font-size:16px;margin:0 0 9px;color:var(--navy)}
+.sub{color:var(--muted);font-size:13px;margin:-5px 0 14px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:560px}th,td{border:1px solid var(--line);padding:9px;text-align:center}th{background:#edf2f9;color:#263b5d;font-weight:700}td:first-child,th:first-child{text-align:left}td input{min-width:76px;text-align:center}
+.metric{border:1px solid var(--line);border-radius:11px;padding:12px;background:#fbfcfe}.metric .name{font-size:12px;color:var(--muted);font-weight:700}.metric .winner{font-weight:750;color:var(--navy);margin-top:5px}.metric .score{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;border-radius:999px;padding:3px 8px;background:#eaf6f0;color:#116344;font-size:12px;font-weight:700}.warning{background:#fff7e6;color:#8a5a00;padding:10px 12px;border-radius:9px;margin:10px 0}.error{background:#fff0ef;color:var(--red);padding:10px 12px;border-radius:9px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row .fit{flex:0 0 auto}.probgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stage{border:1px solid var(--line);border-left:5px solid var(--pink);border-radius:10px;padding:12px;margin:9px 0;background:#fff}.stage strong{color:var(--navy)}.stage .detail{font-size:13px;color:var(--muted)}
+.flow{display:flex;flex-direction:column;align-items:center;gap:7px}.flowbox{width:min(100%,650px);border:1px solid #b8c8e0;background:#f7faff;border-radius:10px;padding:11px 14px;text-align:center}.arrow{color:var(--pink);font-size:22px;font-weight:800;line-height:1}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+a{color:#2457a6;font-weight:650}.note{font-size:13px;color:var(--muted)}
+@media(max-width:760px){.grid2,.grid4{grid-template-columns:1fr}.card{padding:14px}header{padding:23px 18px}.toolbar button{flex:1}}
+</style>
+</head>
+<body>
+<header>
+ <div class="eyebrow">Grade 10 · Term 1 · Criterion 10</div>
+ <h1>Interactive Decision Webpage</h1>
+ <p>Explore decision-making under uncertainty. Edit alternatives, states of nature, payoffs and probabilities, then compare decision criteria and staged filtering.</p>
+</header>
+<main>
+ <div class="toolbar">
+  <label style="min-width:240px;flex:1">Preloaded decision problem
+   <select id="exampleSelect"><option value="market">Example 1 · Market expansion</option><option value="product">Example 2 · Product launch</option></select>
+  </label>
+  <button id="loadExample">Load example</button>
+  <button class="secondary" id="resetStages">Reset filtering</button>
+ </div>
+ <section class="card">
+  <h2>1. Decision model</h2>
+  <p class="sub">Edit the names and payoff values directly in the table. Payoffs are assumed to be monetary outcomes; higher values are better.</p>
+  <div class="row" style="margin-bottom:12px">
+   <button id="addAlt" class="secondary fit">+ Add alternative</button>
+   <button id="addState" class="secondary fit">+ Add state of nature</button>
+  </div>
+  <div id="modelTable" class="tablewrap"></div>
+  <div id="modelMessage" aria-live="polite"></div>
+  <h3 style="margin-top:20px">State probabilities</h3>
+  <p class="sub">Enter probabilities between 0 and 1. Their total must equal 1.00 for EMV/Bayes calculations.</p>
+  <div id="probabilities" class="probgrid"></div>
+  <div id="probMessage" aria-live="polite"></div>
+ </section>
+ <section class="card">
+  <h2>2. Decision criteria results</h2>
+  <p class="sub">All results update automatically when you edit the model. Ties are reported rather than arbitrarily broken.</p>
+  <div id="criteriaResults" class="grid4"></div>
+  <h3 style="margin-top:20px">Regret table · opportunity loss</h3>
+  <div id="regretTable" class="tablewrap"></div>
+ </section>
+ <section class="card">
+  <h2>3. Staged filtering</h2>
+  <p class="sub">Choose a criterion for each stage. At every stage, the best remaining alternative(s) survive; ties are retained. The next stage evaluates only those survivors.</p>
+  <div class="row">
+   <label>Criterion for next stage
+    <select id="stageCriterion">
+     <option value="maximax">Maximax</option><option value="maximin">Maximin</option><option value="regret">Minimax Regret</option><option value="emv">EMV / Bayes</option>
+    </select>
+   </label>
+   <button id="addStage" class="fit">Apply next stage</button>
+  </div>
+  <div id="stageMessage" aria-live="polite"></div>
+  <div id="stageList"></div>
+  <div id="flowDiagram" class="flow" style="margin-top:18px"></div>
+ </section>
+ <section class="card">
+  <h2>4. How the criteria work</h2>
+  <div class="grid2">
+   <div><h3>Maximax (optimistic)</h3><p class="note">For each alternative, find its highest payoff. Choose the alternative with the highest of these values.</p></div>
+   <div><h3>Maximin (pessimistic)</h3><p class="note">For each alternative, find its lowest payoff. Choose the alternative with the highest of these minimum values.</p></div>
+   <div><h3>Minimax Regret</h3><p class="note">For each state, subtract each payoff from the best payoff in that state. Choose the alternative with the smallest maximum regret.</p></div>
+   <div><h3>EMV / Bayes</h3><p class="note">Multiply each payoff by its state's probability and add the products. Choose the alternative with the highest expected monetary value.</p></div>
+  </div>
+ </section>
+ <section class="card">
+  <h2>5. AI development record</h2>
+  <p class="note">Before submission, replace the placeholder below with the share link to the AI conversation used to develop this webpage.</p>
+  <a id="aiLink" href="#add-your-chatgpt-conversation-share-link" target="_blank" rel="noopener">Open AI development conversation (share link to be added before submission)</a>
+ </section>
+ <footer>C10 Practice · Interactive Decision Model · Grade 10 Global Economics</footer>
+</main>
+<script>
+const examples={
+ market:{alts:["Small store","Online store","Large store"],states:["Low demand","Medium demand","High demand"],pay:[[20,45,70],[10,50,100],[ -30,60,150]],probs:[0.30,0.40,0.30]},
+ product:{alts:["Basic product","Premium product","Eco product","Delay launch"],states:["Weak market","Stable market","Strong market"],pay:[[35,55,75],[ -10,65,140],[15,60,110],[25,40,55]],probs:[0.25,0.50,0.25]}
+};
+let model=structuredClone(examples.market), stages=[];
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toFixed(2);
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function valid(){if(model.alts.length<2)return "Add at least two alternatives.";if(model.states.length<2)return "Add at least two states of nature.";if(model.pay.some(r=>r.length!==model.states.length||r.some(v=>!Number.isFinite(Number(v)))))return "Every payoff must be a valid number.";return ""}
+function probValid(){let p=model.probs.map(Number);if(p.some(x=>!Number.isFinite(x)||x<0||x>1))return "Each probability must be between 0 and 1.";let sum=p.reduce((a,b)=>a+b,0);if(Math.abs(sum-1)>0.0001)return `Probabilities currently total ${fmt(sum)}. Adjust them so the total is 1.00.`;return ""}
+function renderModel(){
+ let h='<table><thead><tr><th>Alternative</th>'+model.states.map((s,j)=>`<th><input type="text" aria-label="State ${j+1} name" value="${escapeHTML(s)}" data-state="${j}"></th>`).join('')+'<th>Action</th></tr></thead><tbody>';
+ model.alts.forEach((a,i)=>{h+=`<tr><td><input type="text" aria-label="Alternative ${i+1} name" value="${escapeHTML(a)}" data-alt="${i}"></td>`;model.states.forEach((s,j)=>h+=`<td><input type="number" step="any" aria-label="Payoff ${i+1}, ${j+1}" value="${model.pay[i][j]}" data-pay="${i},${j}"></td>`);h+=`<td><button class="danger small" data-remove-alt="${i}" ${model.alts.length<=2?'disabled title="At least two alternatives are required"':''}>Remove</button></td></tr>`});
+ h+='</tbody></table>'; $('modelTable').innerHTML=h;
+ $('modelTable').querySelectorAll('[data-alt]').forEach(el=>el.addEventListener('change',e=>{model.alts[+e.target.dataset.alt]=e.target.value.trim()||`Alternative ${+e.target.dataset.alt+1}`;update()}));
+ $('modelTable').querySelectorAll('[data-state]').forEach(el=>el.addEventListener('change',e=>{model.states[+e.target.dataset.state]=e.target.value.trim()||`State ${+e.target.dataset.state+1}`;update()}));
+ $('modelTable').querySelectorAll('[data-pay]').forEach(el=>el.addEventListener('change',e=>{let [i,j]=e.target.dataset.pay.split(',').map(Number);model.pay[i][j]=e.target.value===''?NaN:Number(e.target.value);update()}));
+ $('modelTable').querySelectorAll('[data-remove-alt]').forEach(el=>el.addEventListener('click',()=>{let i=+el.dataset.removeAlt;model.alts.splice(i,1);model.pay.splice(i,1);update()}));
+ let phtml=model.states.map((s,j)=>`<label>${escapeHTML(s)}<input type="number" min="0" max="1" step="0.01" value="${model.probs[j]}" data-prob="${j}"></label>`).join('');
+ $('probabilities').innerHTML=phtml;
+ $('probabilities').querySelectorAll('[data-prob]').forEach(el=>el.addEventListener('change',e=>{model.probs[+e.target.dataset.prob]=e.target.value===''?NaN:Number(e.target.value);update()}));
+}
+function scoreSet(ids,criterion){
+ let rows=ids.map(i=>({i,vals:model.pay[i].map(Number)}));
+ if(criterion==='maximax')return rows.map(r=>({i:r.i,v:Math.max(...r.vals)}));
+ if(criterion==='maximin')return rows.map(r=>({i:r.i,v:Math.min(...r.vals)}));
+ if(criterion==='emv')return rows.map(r=>({i:r.i,v:r.vals.reduce((sum,x,j)=>sum+x*Number(model.probs[j]),0)}));
+ let best=model.states.map((s,j)=>Math.max(...rows.map(r=>r.vals[j])));
+ return rows.map(r=>({i:r.i,v:Math.max(...r.vals.map((x,j)=>best[j]-x))}));
+}
+function bestScores(scores,criterion){let target=(criterion==='regret'||criterion==='maximin')?(criterion==='regret'?Math.min(...scores.map(x=>x.v)):Math.max(...scores.map(x=>x.v))):Math.max(...scores.map(x=>x.v));return {target,winners:scores.filter(x=>Math.abs(x.v-target)<1e-8).map(x=>x.i)}}
+const names={maximax:'Maximax',maximin:'Maximin',regret:'Minimax Regret',emv:'EMV / Bayes'};
+function renderRegret(){
+ let best=model.states.map((s,j)=>Math.max(...model.pay.map(r=>Number(r[j]))));
+ let h='<table><thead><tr><th>Alternative</th>'+model.states.map(s=>`<th>${escapeHTML(s)}</th>`).join('')+'<th>Maximum regret</th></tr></thead><tbody>';
+ model.alts.forEach((a,i)=>{let regrets=model.pay[i].map((x,j)=>best[j]-Number(x));h+=`<tr><td>${escapeHTML(a)}</td>${regrets.map(x=>`<td>${fmt(x)}</td>`).join('')}<td><strong>${fmt(Math.max(...regrets))}</strong></td></tr>`});h+='</tbody></table>'; $('regretTable').innerHTML=h;
+}
+function renderCriteria(){
+ let defs=[['maximax','Maximax'],['maximin','Maximin'],['regret','Minimax Regret'],['emv','EMV / Bayes']];
+ $('criteriaResults').innerHTML=defs.map(([k,label])=>{let sc=scoreSet(model.alts.map((_,i)=>i),k),b=bestScores(sc,k);return `<div class="metric"><div class="name">${label}</div><div class="winner">${b.winners.map(i=>escapeHTML(model.alts[i])).join(', ')}</div><div class="score">Best value: ${fmt(b.target)}</div></div>`}).join('');
+}
+function renderStages(){
+ $('stageList').innerHTML=stages.map((s,i)=>`<div class="stage"><strong>Stage ${i+1}: ${names[s.criterion]}</strong><div class="detail">Candidates before: ${s.before.map(x=>escapeHTML(x)).join(', ')}<br>Best value: ${fmt(s.value)}<br><span class="pill">Survivors: ${s.after.map(x=>escapeHTML(x)).join(', ')}</span></div></div>`).join('')||'<p class="note">No filtering stages yet. Select a criterion above and click “Apply next stage”.</p>';
+ let flow='<div class="flowbox"><strong>START</strong><br>All alternatives: '+model.alts.map(escapeHTML).join(', ')+'</div>';
+ stages.forEach((s,i)=>{flow+=`<div class="arrow">↓</div><div class="flowbox"><strong>Stage ${i+1}: ${names[s.criterion]}</strong><br>Survivors: ${s.after.map(escapeHTML).join(', ')}</div>`});
+ let final=stages.length?stages[stages.length-1].after:model.alts;
+ flow+=`<div class="arrow">↓</div><div class="flowbox"><strong>FINAL OUTCOME</strong><br>${final.map(escapeHTML).join(', ')}</div>`;$('flowDiagram').innerHTML=flow;
+}
+function update(){
+ renderModel();
+ let err=valid();$('modelMessage').innerHTML=err?`<div class="error">${err}</div>`:'';
+ let pe=probValid();$('probMessage').innerHTML=pe?`<div class="warning">${pe} Other three criteria remain available.</div>`:'<div class="pill">Probabilities valid · total = 1.00</div>';
+ if(!err){renderRegret();renderCriteria()}else{$('criteriaResults').innerHTML='';$('regretTable').innerHTML='';}
+ if(err||pe){$('stageMessage').innerHTML=`<div class="warning">Filtering is paused until the model and probabilities are valid.</div>`}
+ else $('stageMessage').innerHTML='';
+ renderStages();
+}
+$('addAlt').onclick=()=>{model.alts.push(`Alternative ${model.alts.length+1}`);model.pay.push(model.states.map(()=>0));update()};
+$('addState').onclick=()=>{model.states.push(`State ${model.states.length+1}`);model.pay.forEach(r=>r.push(0));model.probs.push(1/model.states.length);model.probs=model.probs.map(()=>1/model.states.length);update()};
+$('addStage').onclick=()=>{
+ let err=valid()||probValid();if(err){$('stageMessage').innerHTML=`<div class="error">${err}</div>`;return}
+ let ids=stages.length?stages[stages.length-1].after.map(n=>model.alts.indexOf(n)):model.alts.map((_,i)=>i);
+ if(!ids.length){$('stageMessage').innerHTML='<div class="error">No alternatives remain to evaluate.</div>';return}
+ let criterion=$('stageCriterion').value,sc=scoreSet(ids,criterion),b=bestScores(sc,criterion);
+ stages.push({criterion,before:ids.map(i=>model.alts[i]),after:b.winners.map(i=>model.alts[i]),value:b.target});renderStages();$('stageMessage').innerHTML='';
+};
+$('resetStages').onclick=()=>{stages=[];renderStages();$('stageMessage').innerHTML=''};
+$('loadExample').onclick=()=>{model=structuredClone(examples[$('exampleSelect').value]);stages=[];update()};
+update();
+</script>
+</body>
+</html>
